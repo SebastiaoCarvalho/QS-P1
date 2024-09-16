@@ -72,7 +72,35 @@ lemma DeserializeProperty(e : aexpr, cs : seq<code>, exps: seq<aexpr>)
       }
     case UnOp(op, a1) =>
       calc {
-        
+        Deserialize(Serialize(e) + cs, exps);
+        == Deserialize(Serialize(UnOp(op, a1)) + cs, exps);
+        == Deserialize(Serialize(a1) + [UnOpCode(op)] + cs, exps);
+        == {assert Serialize(a1) + [UnOpCode(op)] + cs == Serialize(a1) + ([UnOpCode(op)] + cs); } 
+        Deserialize(Serialize(a1) + ([UnOpCode(op)] + cs), exps);
+        == {DeserializeProperty(a1, [UnOpCode(op)] + cs, exps);} Deserialize([UnOpCode(op)] + cs, [a1] + exps);
+        == Deserialize(cs, DeserializeAux(UnOpCode(op), [a1] + exps));
+        == Deserialize(cs, [UnOp(op, a1)] + exps);
+        == Deserialize(cs, [e] + exps);
+      }
+    case BinOp(op, a1, a2) =>
+      calc {
+        Deserialize(Serialize(e) + cs, exps);
+        == Deserialize(Serialize(BinOp(op, a1, a2)) + cs, exps);
+        == Deserialize(Serialize(a2) + Serialize(a1) + [BinOpCode(op)] + cs, exps);
+        == {assert Serialize(a2) + Serialize(a1) + [BinOpCode(op)] + cs == Serialize(a2) + (Serialize(a1) + [BinOpCode(op)] + cs); } 
+        Deserialize(Serialize(a2) + (Serialize(a1) + [BinOpCode(op)] + cs), exps);
+        == {DeserializeProperty(a1, Serialize(a1) + [BinOpCode(op)] + cs, exps);}
+        Deserialize(Serialize(a1) + [BinOpCode(op)] + cs, [a2] + exps);
+        == {assert Serialize(a1) + [BinOpCode(op)] + cs == Serialize(a1) + ([BinOpCode(op)] + cs);}
+        Deserialize(Serialize(a1) + ([BinOpCode(op)] + cs), [a2] + exps) ;
+        == {DeserializeProperty(a1, [BinOpCode(op)] + cs, [a2] + exps);}
+        Deserialize([BinOpCode(op)] + cs, [a1] + ([a2] + exps));
+        == {assert [a1] + ([a2] + exps) == [a1, a2] + exps;}
+        Deserialize([BinOpCode(op)] + cs, [a1, a2] + exps);
+        == Deserialize(cs, DeserializeAux(BinOpCode(op), [a1, a2] + exps));
+        == Deserialize(cs, [BinOp(op, a1, a2)] + exps);
+        == Deserialize(cs, [e] + exps);
+
       }
   }
 }
