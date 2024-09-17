@@ -27,6 +27,11 @@ function Serialize(a : aexpr) : seq<code>
 /*
   Ex1.1
 */
+function Deserialize(cs : seq<code>) : seq<aexpr>
+{
+  Deserialize(cs, [])
+} 
+
 function Deserialize(cs : seq<code>, exps: seq<aexpr>) : seq<aexpr> 
 {
   if (cs == []) then []
@@ -50,7 +55,7 @@ function DeserializeAux(cd : code, exps : seq<aexpr>) : seq<aexpr>
 /*
   Ex1.2
 */
-lemma DeserializeProperty(e : aexpr, cs : seq<code>, exps: seq<aexpr>)
+lemma DeserializePropertyAux(e : aexpr, cs : seq<code>, exps: seq<aexpr>)
   ensures Deserialize(Serialize(e) + cs, exps) == Deserialize(cs, [ e ] + exps)
 {
   match e {
@@ -105,16 +110,50 @@ lemma DeserializeProperty(e : aexpr, cs : seq<code>, exps: seq<aexpr>)
   }
 }
 
-
-/*
-  Ex1.3
-*/
-/*function SerializeCodes(cs : seq<code>) : seq<nat> 
+lemma DeserializeProperty(e : aexpr)
+  ensures Deserialize(Serialize(e)) == e
 {
 
 }
 
-function DeserializeCodes(ints : seq<nat>) : seq<code> {
+/*
+  Ex1.3
+*/
+function SerializeCodes(cs : seq<code>) : seq<nat> 
+{
+  if (|cs| == 0) then []
+  else {
+    cs 
+  }
+}
+
+function SerializeCodesAux(c : code) : seq<nat>
+{
+  match c {
+    case VarCode(s) => [0] + [|s|] + s
+    case ValCode(i) => [1, i]
+    case UnOpCode(uop) => 
+      [SerializeUop(uop)] + SerializeCode
+    case BinOpCode(bop) => 
+      if |exps| < 2 then []
+      else [BinOp(bop, exps[0], exps[1])] + exps[2..]
+  }
+}
+
+function SerializeUop(op : uop) : nat
+{
+  3
+}
+
+function SerializeBop(op : bop) : nat
+{
+  match op {
+    case Plus => 4
+    case Minus => 5
+  }
+}
+
+/* function DeserializeCodes(ints : seq<nat>) : seq<code> {
   
 }*/
 

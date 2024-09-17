@@ -20,7 +20,6 @@ ensures b == noRepetitionF(arr[..])
 
   while (i < arr.Length)
   invariant 0 <= i <= arr.Length
-  invariant b == noRepetitionF(arr[i..])
   {
 
     var v := arr[i];   
