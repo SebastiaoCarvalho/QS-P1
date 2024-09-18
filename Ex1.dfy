@@ -195,10 +195,52 @@ function DeserializeCodeVal(ints : seq<nat>, exprs : seq<code>) : seq<code>
 /*
   Ex1.4
 */
-/*lemma DeserializeCodesProperty(cs : seq<code>)
+lemma DeserializeCodesProperty(cs : seq<code>)
   ensures DeserializeCodes(SerializeCodes(cs)) == cs
 {
-}*/
+  calc {
+    DeserializeCodes(SerializeCodes(cs));
+    == DeserializeCodesComplete(SerializeCodes(cs), []);
+    == {assert SerializeCodes(cs) + [] == SerializeCodes(cs);} DeserializeCodesComplete(SerializeCodes(cs) + [], []);
+    == {DeserializeCodesPropertyAux(cs, [], [], [], []);} DeserializeCodesComplete([], cs + []);
+    == cs + [];
+    == cs;
+  }
+}
+
+lemma DeserializeCodesPropertyAux(cs : seq<code>, exprs : seq<nat>, exprs2 : seq<code>, extras : seq<code>, extras2 : seq<nat>)
+  ensures DeserializeCodesComplete(SerializeCodesComplete(cs + extras, exprs) + extras2, exprs2) 
+  == DeserializeCodesComplete(SerializeCodesComplete(extras, exprs) + extras2, cs + exprs2)
+  //== DeserializeCodesComplete(extras2, cs + exprs2)
+{
+  if (|cs| == 0) {
+    calc {
+      DeserializeCodesComplete(SerializeCodesComplete(cs + extras, exprs) + extras2, exprs2);
+      == DeserializeCodesComplete(SerializeCodesComplete([]+ extras, exprs) + extras2, exprs2);
+      == {assert [] + extras == extras;} DeserializeCodesComplete(SerializeCodesComplete(extras, exprs) + extras2, exprs2);
+      == {assert [] + exprs2 == exprs2;} DeserializeCodesComplete(SerializeCodesComplete(extras, exprs) + extras2, [] + exprs2);
+      == DeserializeCodesComplete(SerializeCodesComplete(extras, exprs) + extras2, cs + exprs2);
+      //== DeserializeCodesComplete(SerializeCodesComplete([], exprs), exprs2);
+      //== DeserializeCodesComplete(exprs + extras, exprs2);
+      //== {assert [] + extras == extras;} DeserializeCodesComplete(extras, exprs);
+      //== {assert exprs == [] + exprs;} DeserializeCodesComplete(extras, [] + exprs);
+      //== DeserializeCodesComplete(extras, cs + exprs);
+    }
+  }
+  else {
+    //match cs[0] {
+    //  case VarCode(s) => 
+    //    calc {
+    //      DeserializeCodesComplete(SerializeCodes(cs) + extras, exprs);
+    //      == DeserializeCodesComplete(SerializeCodesComplete(cs, []) + extras, exprs);
+    //      == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(cs[0], [])) + extras, exprs);
+    //      == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(VarCode(s), [])) + extras, exprs);
+    //      == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], [0] + [|s|] + s + []) + extras, exprs);
+    //      
+    //    }
+    //}
+  }
+}
 
 /*
   Ex1.5
