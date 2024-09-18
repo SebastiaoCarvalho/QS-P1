@@ -203,13 +203,13 @@ function DeserializeCodeVal(ints : seq<nat>, exprs : seq<code>) : seq<code>
 /*
   Ex1.5
 */
-/*function FullSerialize(e : aexpr) : seq<nat> {
- 
+function FullSerialize(e : aexpr) : seq<nat> {
+  SerializeCodes(Serialize(e))
 }
 
 function FullDeserealize(nats : seq<nat>) : seq<aexpr> {
- 
-}*/
+  Deserialize(DeserializeCodes(nats))
+}
 
 /*
   Ex1.6
