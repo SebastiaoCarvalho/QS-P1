@@ -125,26 +125,26 @@ lemma DeserializeProperty(e : aexpr)
 /*
   Ex1.3
 */
-/*function SerializeCodes(cs : seq<code>) : seq<nat> 
+function SerializeCodes(cs : seq<code>) : seq<nat> 
 {
-  if (|cs| == 0) then []
-  else {
-    cs 
-  }
+  SerializeCodesComplete(cs, [])
 }
 
-function SerializeCodesAux(c : code) : seq<nat>
+function SerializeCodesComplete(cs : seq<code>, exprs : seq<nat>) : seq<nat>
+{
+  if (|cs| == 0) then exprs
+  else SerializeCodesComplete(cs[1..], SerializeCodesAux(cs[0], exprs))
+}
+
+function SerializeCodesAux(c : code, exprs : seq<nat>) : seq<nat>
 {
   match c {
-    case VarCode(s) => [0] + [|s|] + s
+    case VarCode(s) => [0] + [|s|] + s + exprs
     case ValCode(i) => [1, i]
-    case UnOpCode(uop) => 
-      [SerializeUop(uop)] + SerializeCode
-    case BinOpCode(bop) => 
-      if |exps| < 2 then []
-      else [BinOp(bop, exps[0], exps[1])] + exps[2..]
+    case UnOpCode(uop) => [SerializeUop(uop)] + exprs
+    case BinOpCode(bop) => [SerializeBop(bop)] + exprs
   }
-}*/
+}
 
 function SerializeUop(op : uop) : nat
 {
@@ -159,11 +159,39 @@ function SerializeBop(op : bop) : nat
   }
 }
 
-/* function DeserializeCodes(ints : seq<nat>) : seq<code> {
-  
-}*/
+function DeserializeCodes(ints : seq<nat>) : seq<code> 
+{
+  DeserializeCodesComplete(ints, [])
+}
 
+function DeserializeCodesComplete(ints : seq<nat>, exprs : seq<code>) : seq<code> 
+{
+  if (|ints| == 0) then exprs
+  else match ints[0] {
+      case 0 => if (|ints| < 2) then []
+                else if (|ints| < 2 + ints[1]) then []
+                else DeserializeCodesComplete(ints[(2 + ints[1])..], [VarCode(ints[2..(2 + ints[1])])] + exprs)
+      case 1 => if (|ints| < 2) then []
+                else DeserializeCodesComplete(ints[2..], [ValCode(ints[1])] + exprs)
+      case 2 => DeserializeCodesComplete(ints[1..], [UnOpCode(Neg)] + exprs)
+      case 4 => DeserializeCodesComplete(ints[1..], [BinOpCode(Plus)] + exprs)
+      case 5 => DeserializeCodesComplete(ints[1..], [BinOpCode(Minus)] + exprs)
+      case _ => []
+  }
+}
 
+function DeserializeCodeVar(ints : seq<nat>, exprs : seq<code>) : seq<code>
+{
+  if (|ints| < 2) then []
+  else if (|ints| < 2 + ints[1]) then []
+  else DeserializeCodesComplete(ints[(2 + ints[1])..], [VarCode(ints[2..(2 + ints[1])])] + exprs)
+}
+
+function DeserializeCodeVal(ints : seq<nat>, exprs : seq<code>) : seq<code>
+{
+  if (|ints| < 2) then []
+  else DeserializeCodesComplete(ints[2..], [ValCode(ints[1])] + exprs)
+}
 /*
   Ex1.4
 */
