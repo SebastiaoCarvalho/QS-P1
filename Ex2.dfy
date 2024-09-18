@@ -13,13 +13,15 @@ function existsInArray(arr : seq<nat>, v : nat) : bool
 }
 
 method noRepetitionsQuadratic(arr : array<nat>) returns (b: bool) 
-ensures b == noRepetitionF(arr[..])
+  ensures b ==> forall i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j ==> arr[i] != arr[j]
+  ensures !b ==> exists i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j && arr[i] == arr[j]
 {
   var i := 0; 
   b := true; 
 
   while (i < arr.Length)
   invariant 0 <= i <= arr.Length
+  invariant forall k, m :: 0 <= k < i && 0 <= m < i && k != m ==> arr[k] != arr[m]
   {
 
     var v := arr[i];   
@@ -27,6 +29,7 @@ ensures b == noRepetitionF(arr[..])
   
     while (j < arr.Length) 
     invariant 0 <= j <= arr.Length
+    invariant forall k :: 0 <= k < j && k != i ==> arr[k] != arr[i]
     {
       var u := arr[j]; 
       if ((j != i) && (u == v)) {
