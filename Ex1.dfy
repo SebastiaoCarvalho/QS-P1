@@ -256,8 +256,13 @@ function FullDeserealize(nats : seq<nat>) : seq<aexpr> {
 /*
   Ex1.6
 */
-/*lemma FullDeserealizeProperty(e : aexpr)
+lemma FullDeserealizeProperty(e : aexpr)
   ensures FullDeserealize(FullSerialize(e)) == [ e ]
 {
-    
-}*/
+  calc {
+    FullDeserealize(FullSerialize(e));
+    == Deserialize(DeserializeCodes(SerializeCodes(Serialize(e))));
+    == {DeserializeCodesProperty(Serialize(e));} Deserialize(Serialize(e));
+    == {DeserializeProperty(e);} [ e ];
+  }    
+}
