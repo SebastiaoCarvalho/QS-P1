@@ -140,7 +140,7 @@ function SerializeCodesAux(c : code, exprs : seq<nat>) : seq<nat>
 {
   match c {
     case VarCode(s) => [0] + [|s|] + s + exprs
-    case ValCode(i) => [1, i]
+    case ValCode(i) => [1, i] + exprs
     case UnOpCode(uop) => [SerializeUop(uop)] + exprs
     case BinOpCode(bop) => [SerializeBop(bop)] + exprs
   }
@@ -148,14 +148,14 @@ function SerializeCodesAux(c : code, exprs : seq<nat>) : seq<nat>
 
 function SerializeUop(op : uop) : nat
 {
-  3
+  2
 }
 
 function SerializeBop(op : bop) : nat
 {
   match op {
-    case Plus => 4
-    case Minus => 5
+    case Plus => 3
+    case Minus => 4
   }
 }
 
@@ -201,44 +201,66 @@ lemma DeserializeCodesProperty(cs : seq<code>)
   calc {
     DeserializeCodes(SerializeCodes(cs));
     == DeserializeCodesComplete(SerializeCodes(cs), []);
-    == {assert SerializeCodes(cs) + [] == SerializeCodes(cs);} DeserializeCodesComplete(SerializeCodes(cs) + [], []);
-    == {DeserializeCodesPropertyAux(cs, [], [], [], []);} DeserializeCodesComplete([], cs + []);
+    == DeserializeCodesComplete(SerializeCodesComplete(cs, []), []);
+    == {DeserializeCodesPropertyAux(cs, [], []);} DeserializeCodesComplete([], cs + []);
     == cs + [];
     == cs;
   }
 }
 
-lemma DeserializeCodesPropertyAux(cs : seq<code>, exprs : seq<nat>, exprs2 : seq<code>, extras : seq<code>, extras2 : seq<nat>)
-  ensures DeserializeCodesComplete(SerializeCodesComplete(cs + extras, exprs) + extras2, exprs2) 
-  == DeserializeCodesComplete(SerializeCodesComplete(extras, exprs) + extras2, cs + exprs2)
-  //== DeserializeCodesComplete(extras2, cs + exprs2)
+lemma DeserializeCodesPropertyAux(cs : seq<code>, exprs : seq<nat>, exprs2 : seq<code>)
+  ensures DeserializeCodesComplete(SerializeCodesComplete(cs, exprs), exprs2) == DeserializeCodesComplete(exprs, cs + exprs2) 
 {
   if (|cs| == 0) {
     calc {
-      DeserializeCodesComplete(SerializeCodesComplete(cs + extras, exprs) + extras2, exprs2);
-      == DeserializeCodesComplete(SerializeCodesComplete([]+ extras, exprs) + extras2, exprs2);
-      == {assert [] + extras == extras;} DeserializeCodesComplete(SerializeCodesComplete(extras, exprs) + extras2, exprs2);
-      == {assert [] + exprs2 == exprs2;} DeserializeCodesComplete(SerializeCodesComplete(extras, exprs) + extras2, [] + exprs2);
-      == DeserializeCodesComplete(SerializeCodesComplete(extras, exprs) + extras2, cs + exprs2);
-      //== DeserializeCodesComplete(SerializeCodesComplete([], exprs), exprs2);
-      //== DeserializeCodesComplete(exprs + extras, exprs2);
-      //== {assert [] + extras == extras;} DeserializeCodesComplete(extras, exprs);
-      //== {assert exprs == [] + exprs;} DeserializeCodesComplete(extras, [] + exprs);
-      //== DeserializeCodesComplete(extras, cs + exprs);
+      DeserializeCodesComplete(SerializeCodesComplete(cs, exprs), exprs2);
+      == DeserializeCodesComplete(SerializeCodesComplete([], exprs), exprs2);
+      == DeserializeCodesComplete(exprs, exprs2);
+      == {assert [] + exprs2 == exprs2;} DeserializeCodesComplete(exprs, [] + exprs2);
+      == DeserializeCodesComplete(exprs, cs + exprs2);
     }
   }
   else {
-    //match cs[0] {
-    //  case VarCode(s) => 
-    //    calc {
-    //      DeserializeCodesComplete(SerializeCodes(cs) + extras, exprs);
-    //      == DeserializeCodesComplete(SerializeCodesComplete(cs, []) + extras, exprs);
-    //      == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(cs[0], [])) + extras, exprs);
-    //      == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(VarCode(s), [])) + extras, exprs);
-    //      == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], [0] + [|s|] + s + []) + extras, exprs);
-    //      
-    //    }
-    //}
+    match cs[0] {
+      case VarCode(s) => calc {
+        DeserializeCodesComplete(SerializeCodesComplete(cs, exprs), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(cs[0], exprs)), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(VarCode(s), exprs)), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], [0] + [|s|] + s + exprs), exprs2);
+        == {DeserializeCodesPropertyAux(cs[1..], [0] + [|s|] + s + exprs, exprs2);} DeserializeCodesComplete([0] + [|s|] + s + exprs, cs[1..] + exprs2);
+        == DeserializeCodesComplete([0, |s|] + s + exprs, cs[1..] + exprs2);
+        == DeserializeCodesComplete(exprs, [VarCode(s)] + cs[1..] + exprs2);
+        == {assert [VarCode(s)] + cs[1..] == cs;} DeserializeCodesComplete(exprs, cs + exprs2);
+      }
+      case ValCode(i) => calc {
+        DeserializeCodesComplete(SerializeCodesComplete(cs, exprs), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(cs[0], exprs)), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(ValCode(i), exprs)), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], [1, i] + exprs), exprs2);
+        == {DeserializeCodesPropertyAux(cs[1..], [1,i] + exprs, exprs2);} DeserializeCodesComplete([1,i] + exprs, cs[1..] + exprs2);
+        == DeserializeCodesComplete(exprs, [ValCode(i)] + cs[1..] + exprs2);
+        == {assert [ValCode(i)] + cs[1..] == cs;} DeserializeCodesComplete(exprs, cs + exprs2);
+      }
+      case UnOpCode(uop) => calc {
+        DeserializeCodesComplete(SerializeCodesComplete(cs, exprs), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(cs[0], exprs)), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(UnOpCode(uop), exprs)), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], [SerializeUop(uop)] + exprs), exprs2);
+        == {DeserializeCodesPropertyAux(cs[1..], [SerializeUop(uop)] + exprs, exprs2);} DeserializeCodesComplete([SerializeUop(uop)] + exprs, cs[1..] + exprs2);
+        == DeserializeCodesComplete([2] + exprs, cs[1..] + exprs2);
+        == DeserializeCodesComplete(exprs, [UnOpCode(uop)] + cs[1..] + exprs2);
+        == {assert [UnOpCode(uop)] + cs[1..] == cs;} DeserializeCodesComplete(exprs, cs + exprs2);
+      }
+      case BinOpCode(bop) => calc {
+        DeserializeCodesComplete(SerializeCodesComplete(cs, exprs), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(cs[0], exprs)), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(BinOpCode(bop), exprs)), exprs2);
+        == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], [SerializeBop(bop)] + exprs), exprs2);
+        == {DeserializeCodesPropertyAux(cs[1..], [SerializeBop(bop)] + exprs, exprs2);} DeserializeCodesComplete([SerializeBop(bop)] + exprs, cs[1..] + exprs2);
+        == DeserializeCodesComplete(exprs, [BinOpCode(bop)] + cs[1..] + exprs2);
+        == {assert [BinOpCode(bop)] + cs[1..] == cs;} DeserializeCodesComplete(exprs, cs + exprs2);
+      }
+    }
   }
 }
 
