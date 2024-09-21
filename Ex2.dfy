@@ -64,7 +64,7 @@ method noRepetitionsLinear(arr : array<nat>) returns (b: bool)
   while (i < arr.Length)
   invariant 0 <= i <= arr.Length
   invariant forall k :: 0 <= k < i ==> table[arr[k]]
-  invariant forall k :: (0 <= k <= max && table[k]) ==> (exists j :: 0 <= j < arr.Length && arr[j] == k)
+  invariant forall k :: (0 <= k <= max && table[k]) ==> (exists j :: 0 <= j < i && arr[j] == k)
   invariant forall k, m :: 0 <= k < i && 0 <= m < i && k != m ==> arr[k] != arr[m]
   {
     if (table[arr[i]]) {
