@@ -148,7 +148,9 @@ function SerializeCodesAux(c : code, exprs : seq<nat>) : seq<nat>
 
 function SerializeUop(op : uop) : seq<nat>
 {
-  [2]
+  match op {
+    case Neg => [2]
+  }
 }
 
 function SerializeBop(op : bop) : seq<nat>
@@ -173,10 +175,19 @@ function DeserializeCodesComplete(ints : seq<nat>, exprs : seq<code>) : seq<code
                 else DeserializeCodesComplete(ints[(2 + ints[1])..], [VarCode(ints[2..(2 + ints[1])])] + exprs)
       case 1 => if (|ints| < 2) then []
                 else DeserializeCodesComplete(ints[2..], [ValCode(ints[1])] + exprs)
-      case 2 => DeserializeCodesComplete(ints[1..], [UnOpCode(Neg)] + exprs)
+      case 2 => DeserializeCodesComplete(ints[1..], DeserializeUop(ints[..1]) + exprs)
       case 3 => if (|ints| < 2) then []
                 else DeserializeCodesComplete(ints[2..], DeserializeBop(ints[..2]) + exprs)
       case _ => []
+  }
+}
+
+function DeserializeUop(nums : seq<nat>) : seq<code>
+{
+  if (|nums| < 1) then []
+  else match nums[0] {
+    case 2 => [UnOpCode(Neg)]
+    case _ => []
   }
 }
 
@@ -218,6 +229,35 @@ lemma DeserializeCodesProperty(cs : seq<code>)
   }
 }
 
+lemma DeserializeUopProperty(uop : uop)
+  ensures DeserializeUop(SerializeUop(uop)) == [UnOpCode(uop)]
+{
+  match uop {
+    case Neg => calc {
+      DeserializeUop(SerializeUop(uop));
+      == DeserializeUop([2]);
+      == [UnOpCode(Neg)];
+    }
+  }
+}
+
+lemma DeserializeBopProperty(bop : bop)
+  ensures DeserializeBop(SerializeBop(bop)) == [BinOpCode(bop)]
+{
+  match bop {
+    case Plus => calc {
+      DeserializeBop(SerializeBop(bop));
+      == DeserializeBop([3, 0]);
+      == [BinOpCode(Plus)];
+    }
+    case Minus => calc {
+      DeserializeBop(SerializeBop(bop));
+      == DeserializeBop([3, 1]);
+      == [BinOpCode(Minus)];
+    }
+  }
+}
+
 lemma DeserializeCodesPropertyAux(cs : seq<code>, exprs : seq<nat>, exprs2 : seq<code>)
   ensures DeserializeCodesComplete(SerializeCodesComplete(cs, exprs), exprs2) == DeserializeCodesComplete(exprs, cs + exprs2) 
 {
@@ -239,7 +279,8 @@ lemma DeserializeCodesPropertyAux(cs : seq<code>, exprs : seq<nat>, exprs2 : seq
         == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], [0] + [|s|] + s + exprs), exprs2);
         == {DeserializeCodesPropertyAux(cs[1..], [0] + [|s|] + s + exprs, exprs2);} DeserializeCodesComplete([0] + [|s|] + s + exprs, cs[1..] + exprs2);
         == DeserializeCodesComplete([0, |s|] + s + exprs, cs[1..] + exprs2);
-        == DeserializeCodesComplete(exprs, [VarCode(s)] + cs[1..] + exprs2);
+        == DeserializeCodesComplete(exprs, [VarCode(s)] + (cs[1..] + exprs2));
+        == {assert [VarCode(s)] + (cs[1..] + exprs2) == [VarCode(s)] + cs[1..] + exprs2;} DeserializeCodesComplete(exprs, [VarCode(s)] + cs[1..] + exprs2);
         == {assert [VarCode(s)] + cs[1..] == cs;} DeserializeCodesComplete(exprs, cs + exprs2);
       }
       case ValCode(i) => calc {
@@ -248,9 +289,8 @@ lemma DeserializeCodesPropertyAux(cs : seq<code>, exprs : seq<nat>, exprs2 : seq
         == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(ValCode(i), exprs)), exprs2);
         == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], [1, i] + exprs), exprs2);
         == {DeserializeCodesPropertyAux(cs[1..], [1,i] + exprs, exprs2);} DeserializeCodesComplete(([1,i] + exprs), cs[1..] + exprs2);
-        == {assert ([1,i] + exprs)[0] == 1;} {assert |([1,i] + exprs)| >= 2;}
-        DeserializeCodesComplete(([1,i] + exprs)[2..], [ValCode(([1,i] + exprs)[1])] + cs[1..] + exprs2);
-        == {assert i == ([1,i] + exprs)[1];} {assert 1 == ([1,i] + exprs)[0];} {assert exprs == ([1,i] + exprs)[2..];}
+        == DeserializeCodesComplete(([1,i] + exprs)[2..], [ValCode(i)] + (cs[1..] + exprs2));
+        {assert [ValCode(i)] + (cs[1..] + exprs2) == [ValCode(i)] + cs[1..] + exprs2;}
         DeserializeCodesComplete(exprs, [ValCode(i)] + cs[1..] + exprs2);
         == {assert [ValCode(i)] + cs[1..] == cs;} DeserializeCodesComplete(exprs, cs + exprs2);
       }
@@ -260,8 +300,11 @@ lemma DeserializeCodesPropertyAux(cs : seq<code>, exprs : seq<nat>, exprs2 : seq
         == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(UnOpCode(uop), exprs)), exprs2);
         == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeUop(uop) + exprs), exprs2);
         == {DeserializeCodesPropertyAux(cs[1..], SerializeUop(uop) + exprs, exprs2);} DeserializeCodesComplete(SerializeUop(uop) + exprs, cs[1..] + exprs2);
-        == DeserializeCodesComplete([2] + exprs, cs[1..] + exprs2);
-        == DeserializeCodesComplete(exprs, [UnOpCode(uop)] + cs[1..] + exprs2);
+        == DeserializeCodesComplete((SerializeUop(uop) + exprs), cs[1..] + exprs2);
+        == DeserializeCodesComplete((SerializeUop(uop) + exprs)[1..], DeserializeUop(SerializeUop(uop)) + (cs[1..] + exprs2));
+        == {DeserializeUopProperty(uop);} DeserializeCodesComplete(exprs, [UnOpCode(uop)] + (cs[1..] + exprs2));
+        {assert [UnOpCode(uop)] + (cs[1..] + exprs2) == [UnOpCode(uop)] + cs[1..] + exprs2;}
+        DeserializeCodesComplete(exprs, [UnOpCode(uop)] + cs[1..] + exprs2);
         == {assert [UnOpCode(uop)] + cs[1..] == cs;} DeserializeCodesComplete(exprs, cs + exprs2);
       }
       case BinOpCode(bop) => calc {
@@ -269,8 +312,11 @@ lemma DeserializeCodesPropertyAux(cs : seq<code>, exprs : seq<nat>, exprs2 : seq
         == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(cs[0], exprs)), exprs2);
         == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeCodesAux(BinOpCode(bop), exprs)), exprs2);
         == DeserializeCodesComplete(SerializeCodesComplete(cs[1..], SerializeBop(bop) + exprs), exprs2);
-        == {DeserializeCodesPropertyAux(cs[1..], SerializeBop(bop) + exprs, exprs2);} DeserializeCodesComplete(SerializeBop(bop) + exprs, cs[1..] + exprs2);
-        == {assert SerializeBop(bop)[0] == 3;} DeserializeCodesComplete(exprs, DeserializeBop(SerializeBop(bop)) + cs[1..] + exprs2);
+        == {DeserializeCodesPropertyAux(cs[1..], SerializeBop(bop) + exprs, exprs2);} DeserializeCodesComplete((SerializeBop(bop) + exprs), cs[1..] + exprs2);
+        == DeserializeCodesComplete((SerializeBop(bop) + exprs)[2..], DeserializeBop((SerializeBop(bop) + exprs)[..2]) + (cs[1..] + exprs2));
+        == {assert DeserializeBop((SerializeBop(bop) + exprs)[..2]) + (cs[1..] + exprs2) == DeserializeBop(SerializeBop(bop)) + cs[1..] + exprs2;} 
+        DeserializeCodesComplete(exprs, DeserializeBop(SerializeBop(bop)) + cs[1..] + exprs2);
+        == {DeserializeBopProperty(bop);} DeserializeCodesComplete(exprs, [BinOpCode(bop)] + cs[1..] + exprs2);
         == {assert [BinOpCode(bop)] + cs[1..] == cs;} DeserializeCodesComplete(exprs, cs + exprs2);
       }
     }
