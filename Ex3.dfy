@@ -36,6 +36,8 @@ module Ex3 {
     ensures this.Valid()
     ensures this.val == v
     ensures this.next == null
+    ensures this.footprint == {this}
+    ensures this.content == {v}
     {
       this.val := v;
       this.next := null;
@@ -46,6 +48,8 @@ module Ex3 {
     method add(v : nat) returns (r : Node)
     requires Valid()
     ensures r.Valid()
+    ensures r.next == this
+    ensures r.val == v
     {
       r := new Node(v);
       r.next := this;
@@ -53,16 +57,10 @@ module Ex3 {
       r.content := {v} + this.content;
     }
 
-    function inSet(s : set<nat>, v : nat) : bool 
-    {
-      if (s == []) then false
-      else if (s[0] == v) then true
-      else inSet(s[1..], v);
-    }
-
     method mem(v : nat) returns (b : bool)
-    decreases |footprint|
+    decreases footprint
     requires Valid()
+    ensures b == (v in content)
     {
       if (this.val == v) {
         b:= true;
@@ -79,8 +77,18 @@ module Ex3 {
     }
 
     method copy() returns (n : Node)
+    requires Valid()
+    decreases footprint
+    ensures n.Valid()
+    ensures n.content == this.content
     {
-
+      n := new Node(this.val);
+      if (this.next != null) {
+        var aux := this.next.copy();
+        n.next := aux;
+        n.footprint := {n} + aux.footprint;
+        n.content :=  {n.val} + aux.content;
+      }
     }
 
   
