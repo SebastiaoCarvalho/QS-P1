@@ -35,23 +35,53 @@ module Ex4 {
 
 
     method mem (v : nat) returns (b : bool)
+    requires Valid()
+    ensures b == (v in content)
     {
-   
+      if (list == null) {
+        b := false;
+        return;
+      }
+      b := list.mem(v);
+      return;
     }
 
 
-    method add (v : nat) 
+    method add (v : nat)
+    requires Valid()
+    modifies this, footprint
+    ensures this.content == {v} + old(this.content)
+    ensures this.footprint >= old(this.footprint) 
     {
+      if (this.list == null) {
+        var n := new Ex3.Node(v);
+        this.list := n;
+        this.content := {v};
+        this.footprint := {n};
+      }
+      else {
+        var condition := this.list.mem(v);
+        if (! condition) {
+          var n := this.list.add(v);
+          this.content := {v} + this.content;
+          this.footprint := {n} + this.footprint;
+        }
+      }
     }
 
 
     method union(s : Set) returns (r : Set)
+    requires Valid() && s.Valid()
+    decreases footprint
+    ensures forall k :: (k in r.content) ==> ((k in s.content) || (k in this.content))
     {
-    
+      
     }
 
 
   method inter(s : Set) returns (r : Set)
+  requires Valid() && s.Valid()
+  ensures forall k :: (k in r.content) ==> ((k in s.content) || (k in this.content))
     {
       
 
