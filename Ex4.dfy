@@ -50,6 +50,7 @@ module Ex4 {
     method add (v : nat)
     requires Valid()
     modifies this, footprint
+    ensures Valid()
     ensures this.content == {v} + old(this.content)
     ensures this.footprint >= old(this.footprint) 
     {
@@ -81,10 +82,21 @@ module Ex4 {
 
   method inter(s : Set) returns (r : Set)
   requires Valid() && s.Valid()
-  ensures forall k :: (k in r.content) ==> ((k in s.content) || (k in this.content))
+  ensures fresh(r)
+  ensures forall k :: (k in r.content) <==> ((k in s.content) && (k in this.content))
     {
-      
-
+      r := new Set();
+      var cur1 := this.list;
+      while (cur1 != null)
+      invariant r.Valid()
+      decreases if cur1 != null then cur1.footprint else {}
+      {
+        var condition := s.mem(cur1.val);
+        if (condition) {
+          r.add(cur1.val);
+        }
+        cur1 := cur1.next;
+      }
     }
   }
 
