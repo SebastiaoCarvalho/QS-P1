@@ -77,7 +77,7 @@ module Ex4 {
     requires Valid() && s.Valid()
     decreases footprint
     ensures fresh(r)
-    ensures forall k :: (k in r.content) <==> ((k in s.content) || (k in this.content))
+    ensures r.content == s.content + this.content
     {
       
     }
@@ -85,20 +85,24 @@ module Ex4 {
 
   method inter(s : Set) returns (r : Set)
   requires Valid() && s.Valid()
-  ensures fresh(r)
-  ensures forall k :: (k in r.content) <==> ((k in s.content) && (k in this.content))
+  ensures fresh(r) && r.Valid()
+  ensures r.content == s.content * this.content
     {
       r := new Set();
       var cur1 := this.list;
+      ghost var list_aux : set<nat> := {};
       while (cur1 != null)
       invariant r.Valid()
       invariant cur1 != null ==> cur1.Valid()
+      invariant (cur1 != null) ==> (r.content == list_aux * s.content)
+      invariant (cur1 == null) ==> (list_aux == this.content)
       decreases if cur1 != null then cur1.footprint else {}
       {
         var condition := s.mem(cur1.val);
         if (condition) {
           r.add(cur1.val);
         }
+        list_aux := list_aux + {cur1.val};
         cur1 := cur1.next;
       }
     }
