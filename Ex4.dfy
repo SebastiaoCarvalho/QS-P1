@@ -94,13 +94,14 @@ module Ex4 {
         list_aux := list_aux + {cur1.val};
         cur1 := cur1.next;
       }
-      assert list_aux == this.content;
       var cur2 := s.list;
       var list_aux2 : set<nat> := {};
       while (cur2 != null)
       invariant r.Valid()
       invariant r.content == list_aux2 + content
       invariant cur2 != null ==> cur2.Valid()
+      invariant cur2 != null ==> s.content == list_aux2 + cur2.content
+      invariant cur2 == null ==> list_aux2 == s.content
       decreases if cur2 != null then cur2.footprint else {}
       {
         r.add(cur2.val);
