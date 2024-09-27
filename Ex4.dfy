@@ -49,10 +49,11 @@ module Ex4 {
 
     method add (v : nat)
     requires Valid()
-    modifies this, footprint
+    modifies this
     ensures Valid()
     ensures this.content == {v} + old(this.content)
-    ensures this.footprint >= old(this.footprint) 
+    ensures this.footprint >= old(this.footprint)
+    ensures this.footprint > old(this.footprint) ==>  fresh(this.footprint - old(this.footprint))
     {
       if (this.list == null) {
         var n := new Ex3.Node(v);
@@ -64,6 +65,7 @@ module Ex4 {
         var condition := this.list.mem(v);
         if (! condition) {
           var n := this.list.add(v);
+          this.list := n;
           this.content := {v} + this.content;
           this.footprint := {n} + this.footprint;
         }
@@ -74,7 +76,8 @@ module Ex4 {
     method union(s : Set) returns (r : Set)
     requires Valid() && s.Valid()
     decreases footprint
-    ensures forall k :: (k in r.content) ==> ((k in s.content) || (k in this.content))
+    ensures fresh(r)
+    ensures forall k :: (k in r.content) <==> ((k in s.content) || (k in this.content))
     {
       
     }
@@ -89,6 +92,7 @@ module Ex4 {
       var cur1 := this.list;
       while (cur1 != null)
       invariant r.Valid()
+      invariant cur1 != null ==> cur1.Valid()
       decreases if cur1 != null then cur1.footprint else {}
       {
         var condition := s.mem(cur1.val);
