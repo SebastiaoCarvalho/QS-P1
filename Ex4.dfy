@@ -79,7 +79,34 @@ module Ex4 {
     ensures fresh(r)
     ensures r.content == s.content + this.content
     {
-      
+      r := new Set();
+      var cur1 := this.list;
+      var list_aux : set<nat> := {};
+      while (cur1 != null)
+      invariant r.Valid()
+      invariant cur1 != null ==> cur1.Valid()
+      invariant r.content == list_aux
+      invariant cur1 != null ==> this.content == list_aux + cur1.content
+      invariant cur1 == null ==> list_aux == this.content
+      decreases if cur1 != null then cur1.footprint else {}
+      {
+        r.add(cur1.val);
+        list_aux := list_aux + {cur1.val};
+        cur1 := cur1.next;
+      }
+      assert list_aux == this.content;
+      var cur2 := s.list;
+      var list_aux2 : set<nat> := {};
+      while (cur2 != null)
+      invariant r.Valid()
+      invariant r.content == list_aux2 + content
+      invariant cur2 != null ==> cur2.Valid()
+      decreases if cur2 != null then cur2.footprint else {}
+      {
+        r.add(cur2.val);
+        list_aux2 := list_aux2 + {cur2.val};
+        cur2 := cur2.next;
+      }
     }
 
 
@@ -94,7 +121,8 @@ module Ex4 {
       while (cur1 != null)
       invariant r.Valid()
       invariant cur1 != null ==> cur1.Valid()
-      invariant (cur1 != null) ==> (r.content == list_aux * s.content)
+      invariant r.content == list_aux * s.content
+      invariant (cur1 != null) ==> (this.content == list_aux + cur1.content)
       invariant (cur1 == null) ==> (list_aux == this.content)
       decreases if cur1 != null then cur1.footprint else {}
       {
@@ -103,6 +131,7 @@ module Ex4 {
           r.add(cur1.val);
         }
         list_aux := list_aux + {cur1.val};
+
         cur1 := cur1.next;
       }
     }
