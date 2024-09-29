@@ -76,7 +76,7 @@ module Ex4 {
     method union(s : Set) returns (r : Set)
     requires Valid() && s.Valid()
     decreases footprint
-    ensures fresh(r)
+    ensures fresh(r) && r.Valid()
     ensures r.content == s.content + this.content
     {
       r := new Set();
