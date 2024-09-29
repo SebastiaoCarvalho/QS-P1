@@ -7,7 +7,7 @@ module Ex5 {
   class Set {
     var tbl : array<bool>  
     var list : Ex3.Node?
-    ghost var size : nat
+    ghost const max_val : nat
     ghost var content : set<nat>
     ghost var footprint : set<Ex3.Node>
 
@@ -20,7 +20,7 @@ module Ex5 {
           &&
           content == {}
           && 
-          tbl.Length == size
+          tbl.Length == max_val + 1
           && 
           validTable(tbl, content)
         else 
@@ -28,7 +28,7 @@ module Ex5 {
           &&
           content == list.content
           && 
-          tbl.Length == size
+          tbl.Length == max_val + 1
           &&
           validTable(tbl, content)
           &&
@@ -36,21 +36,26 @@ module Ex5 {
     }
       
     constructor (size : nat)
-    ensures Valid() && this.content == {} && this.footprint == {} && this.size == size
+    ensures Valid() && this.content == {} && this.footprint == {} && this.max_val == size
+    ensures fresh(this.tbl)
     {
-      tbl := new bool[size] (_ => false);
+      tbl := new bool[size + 1] (_ => false);
       list := null;
       footprint := {};
-      this.size := size;
+      this.max_val := size;
       content := {};
     }
 
 
     method mem (v : nat) returns (b : bool)
-    requires Valid() && v < size
+    requires Valid()
     ensures b == (v in content)
     {
-      if tbl[v] {
+      if (v >= tbl.Length) {
+        b := false;
+        return;
+      }
+      if (tbl[v]) {
         b := true;
         return;
       }
@@ -61,7 +66,7 @@ module Ex5 {
     }
     
     method add (v : nat) 
-    requires Valid() && v < size
+    requires Valid() && v <= max_val
     modifies this, tbl
     ensures Valid()
     ensures this.content == {v} + old(this.content)
@@ -132,6 +137,7 @@ module Ex5 {
     {
       var max_size := max(this.tbl.Length, s.tbl.Length);
       r := new Set(max_size);
+      assert r.max_val == max_size;
       var cur1 := this.list;
       ghost var list_aux : set<nat> := {};
       while (cur1 != null)
@@ -157,7 +163,9 @@ module Ex5 {
   function validTable(tbl : array<bool>, content : set<nat>) : bool
   reads tbl
   {
-    forall k :: 0 <= k < tbl.Length ==> (tbl[k] == (k in content))
+    (forall k :: (k in content) ==> (0 <= k < tbl.Length))
+    &&
+    (forall k :: 0 <= k < tbl.Length ==> (tbl[k] == (k in content)))
   }
 
   function max(n1 : nat, n2 : nat) : nat
