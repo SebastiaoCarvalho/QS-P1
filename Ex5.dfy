@@ -71,7 +71,7 @@ module Ex5 {
     ensures Valid()
     ensures this.content == {v} + old(this.content)
     ensures this.footprint >= old(this.footprint)
-    ensures this.footprint > old(this.footprint) ==>  fresh(this.footprint - old(this.footprint))
+    ensures fresh(this.footprint - old(this.footprint))
     ensures this.tbl == old(this.tbl)
     {
       if (this.list == null) {
@@ -103,33 +103,26 @@ module Ex5 {
       var max_size := max(this.tbl.Length, s.tbl.Length);
       r := new Set(max_size);
       var cur1 := this.list;
-      var list_aux : set<nat> := {};
-      assert fresh(r.tbl);
+      ghost var list_aux : set<nat> := {};
       while (cur1 != null)
       invariant r.Valid()
-      invariant cur1 != null ==> r.footprint !! cur1.footprint
-      invariant fresh(r) && fresh(r.footprint) && fresh(r.tbl)
+      invariant fresh(r.tbl)
       invariant cur1 != null ==> cur1.Valid()
       invariant r.content == list_aux
       invariant cur1 != null ==> this.content == list_aux + cur1.content
       invariant cur1 == null ==> list_aux == this.content
       decreases if cur1 != null then cur1.footprint else {}
       {
-        assert this.tbl != r.tbl;
-        assert this != r;
-        assert s.tbl != r.tbl;
-        assert s != r;
-        assert cur1 != r.list;
         r.add(cur1.val);
         list_aux := list_aux + {cur1.val};
         cur1 := cur1.next;
       }
       var cur2 := s.list;
-      var list_aux2 : set<nat> := {};
+      ghost var list_aux2 : set<nat> := {};
       while (cur2 != null)
       invariant r.Valid()
       invariant r.content == list_aux2 + content
-      invariant fresh(r) && fresh(r.footprint) && fresh(r.tbl)
+      invariant fresh(r.tbl)
       invariant cur2 != null ==> cur2.Valid()
       invariant cur2 != null ==> s.content == list_aux2 + cur2.content
       invariant cur2 == null ==> list_aux2 == s.content
@@ -153,7 +146,7 @@ module Ex5 {
       ghost var list_aux : set<nat> := {};
       while (cur1 != null)
       invariant r.Valid()
-      invariant fresh(r) && fresh(r.footprint) && fresh(r.tbl)
+      invariant fresh(r.tbl)
       invariant cur1 != null ==> cur1.Valid()
       invariant r.content == list_aux * s.content
       invariant (cur1 != null) ==> (this.content == list_aux + cur1.content)

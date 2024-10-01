@@ -81,7 +81,7 @@ module Ex4 {
     {
       r := new Set();
       var cur1 := this.list;
-      var list_aux : set<nat> := {};
+      ghost var list_aux : set<nat> := {};
       while (cur1 != null)
       invariant r.Valid()
       invariant cur1 != null ==> cur1.Valid()
@@ -95,7 +95,7 @@ module Ex4 {
         cur1 := cur1.next;
       }
       var cur2 := s.list;
-      var list_aux2 : set<nat> := {};
+      ghost var list_aux2 : set<nat> := {};
       while (cur2 != null)
       invariant r.Valid()
       invariant r.content == list_aux2 + content
