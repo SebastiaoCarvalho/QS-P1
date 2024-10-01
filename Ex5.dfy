@@ -37,7 +37,7 @@ module Ex5 {
       
     constructor (size : nat)
     ensures Valid() && this.content == {} && this.footprint == {} && this.max_val == size
-    ensures fresh(this.tbl)
+    ensures fresh(this.tbl) && fresh(this.footprint)
     {
       tbl := new bool[size + 1] (_ => false);
       list := null;
@@ -67,11 +67,12 @@ module Ex5 {
     
     method add (v : nat) 
     requires Valid() && v <= max_val
-    modifies this, tbl
+    modifies this, this.tbl
     ensures Valid()
     ensures this.content == {v} + old(this.content)
     ensures this.footprint >= old(this.footprint)
     ensures this.footprint > old(this.footprint) ==>  fresh(this.footprint - old(this.footprint))
+    ensures this.tbl == old(this.tbl)
     {
       if (this.list == null) {
         var n := new Ex3.Node(v);
@@ -94,6 +95,7 @@ module Ex5 {
 
     method union(s : Set) returns (r : Set)
     requires Valid() && s.Valid()
+    requires s.footprint !! this.footprint
     decreases footprint
     ensures fresh(r) && r.Valid()
     ensures r.content == s.content + this.content
@@ -102,14 +104,22 @@ module Ex5 {
       r := new Set(max_size);
       var cur1 := this.list;
       var list_aux : set<nat> := {};
+      assert fresh(r.tbl);
       while (cur1 != null)
       invariant r.Valid()
+      invariant cur1 != null ==> r.footprint !! cur1.footprint
+      invariant fresh(r) && fresh(r.footprint) && fresh(r.tbl)
       invariant cur1 != null ==> cur1.Valid()
       invariant r.content == list_aux
       invariant cur1 != null ==> this.content == list_aux + cur1.content
       invariant cur1 == null ==> list_aux == this.content
       decreases if cur1 != null then cur1.footprint else {}
       {
+        assert this.tbl != r.tbl;
+        assert this != r;
+        assert s.tbl != r.tbl;
+        assert s != r;
+        assert cur1 != r.list;
         r.add(cur1.val);
         list_aux := list_aux + {cur1.val};
         cur1 := cur1.next;
@@ -119,6 +129,7 @@ module Ex5 {
       while (cur2 != null)
       invariant r.Valid()
       invariant r.content == list_aux2 + content
+      invariant fresh(r) && fresh(r.footprint) && fresh(r.tbl)
       invariant cur2 != null ==> cur2.Valid()
       invariant cur2 != null ==> s.content == list_aux2 + cur2.content
       invariant cur2 == null ==> list_aux2 == s.content
@@ -142,6 +153,7 @@ module Ex5 {
       ghost var list_aux : set<nat> := {};
       while (cur1 != null)
       invariant r.Valid()
+      invariant fresh(r) && fresh(r.footprint) && fresh(r.tbl)
       invariant cur1 != null ==> cur1.Valid()
       invariant r.content == list_aux * s.content
       invariant (cur1 != null) ==> (this.content == list_aux + cur1.content)
