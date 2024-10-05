@@ -1,6 +1,6 @@
 method noRepetitionsQuadratic(arr : array<nat>) returns (b: bool) 
-  ensures b <==> forall i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j ==> arr[i] != arr[j]
-  ensures !b <==> exists i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j && arr[i] == arr[j]
+  ensures b <==> (forall i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j ==> arr[i] != arr[j])
+  ensures !b <==> (exists i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j && arr[i] == arr[j])
 {
   var i := 0; 
   b := true; 
@@ -43,8 +43,8 @@ ensures nat2 >= nat1 ==> z == nat2
 
 
 method noRepetitionsLinear(arr : array<nat>) returns (b: bool)
-  ensures b <==> forall i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j ==> arr[i] != arr[j]
-  ensures !b <==> exists i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j && arr[i] == arr[j]
+  ensures b <==> (forall i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j ==> arr[i] != arr[j])
+  ensures !b <==> (exists i, j :: 0 <= i < arr.Length && 0 <= j < arr.Length && i != j && arr[i] == arr[j])
 {
   var max : nat := 0;
   var i := 0;

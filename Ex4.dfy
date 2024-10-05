@@ -53,7 +53,7 @@ module Ex4 {
     ensures Valid()
     ensures this.content == {v} + old(this.content)
     ensures this.footprint >= old(this.footprint)
-    ensures this.footprint > old(this.footprint) ==>  fresh(this.footprint - old(this.footprint))
+    ensures fresh(this.footprint - old(this.footprint))
     {
       if (this.list == null) {
         var n := new Ex3.Node(v);
@@ -75,7 +75,6 @@ module Ex4 {
 
     method union(s : Set) returns (r : Set)
     requires Valid() && s.Valid()
-    decreases footprint
     ensures fresh(r) && r.Valid()
     ensures r.content == s.content + this.content
     {
@@ -98,7 +97,7 @@ module Ex4 {
       ghost var list_aux2 : set<nat> := {};
       while (cur2 != null)
       invariant r.Valid()
-      invariant r.content == list_aux2 + content
+      invariant r.content == list_aux2 + this.content
       invariant cur2 != null ==> cur2.Valid()
       invariant cur2 != null ==> s.content == list_aux2 + cur2.content
       invariant cur2 == null ==> list_aux2 == s.content

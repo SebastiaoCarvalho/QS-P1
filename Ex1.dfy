@@ -201,18 +201,6 @@ function DeserializeBop(nums : seq<nat>) : seq<code>
   }
 }
 
-function DeserializeCodeVar(ints : seq<nat>, exprs : seq<code>) : seq<code>
-{
-  if (|ints| < 2) then []
-  else if (|ints| < 2 + ints[1]) then []
-  else DeserializeCodesComplete(ints[(2 + ints[1])..], [VarCode(ints[2..(2 + ints[1])])] + exprs)
-}
-
-function DeserializeCodeVal(ints : seq<nat>, exprs : seq<code>) : seq<code>
-{
-  if (|ints| < 2) then []
-  else DeserializeCodesComplete(ints[2..], [ValCode(ints[1])] + exprs)
-}
 /*
   Ex1.4
 */

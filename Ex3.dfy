@@ -47,7 +47,6 @@ module Ex3 {
     requires Valid()
     ensures r.Valid() && r.content == {v} + this.content
     && r.footprint == {r} + this.footprint && fresh(r)
-    ensures fresh(this.footprint - old(this.footprint))
     {
       r := new Node(v);
       r.next := this;
@@ -77,7 +76,7 @@ module Ex3 {
     method copy() returns (n : Node)
     requires Valid()
     ensures n.Valid() && Valid()
-    ensures fresh(n.footprint)
+    ensures fresh(n.footprint) && fresh(n)
     ensures n.content == this.content
     decreases footprint
     {

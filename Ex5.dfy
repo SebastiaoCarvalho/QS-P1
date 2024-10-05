@@ -12,7 +12,7 @@ module Ex5 {
     ghost var footprint : set<Ex3.Node>
 
     ghost function Valid() : bool 
-    reads this, footprint, this.list, tbl
+    reads this, footprint, this.list, this.tbl
     {
       if (this.list == null)
         then 
@@ -41,9 +41,9 @@ module Ex5 {
     {
       tbl := new bool[size + 1] (_ => false);
       list := null;
-      footprint := {};
+      this.footprint := {};
       this.max_val := size;
-      content := {};
+      this.content := {};
     }
 
 
@@ -95,8 +95,6 @@ module Ex5 {
 
     method union(s : Set) returns (r : Set)
     requires Valid() && s.Valid()
-    requires s.footprint !! this.footprint
-    decreases footprint
     ensures fresh(r) && r.Valid()
     ensures r.content == s.content + this.content
     {
@@ -121,7 +119,7 @@ module Ex5 {
       ghost var list_aux2 : set<nat> := {};
       while (cur2 != null)
       invariant r.Valid()
-      invariant r.content == list_aux2 + content
+      invariant r.content == list_aux2 + this.content
       invariant fresh(r.tbl)
       invariant cur2 != null ==> cur2.Valid()
       invariant cur2 != null ==> s.content == list_aux2 + cur2.content
